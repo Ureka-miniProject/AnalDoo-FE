@@ -1,49 +1,38 @@
 <template>
-  <div
-    class="date-selector"
-    ref="scrollArea"
-    @mousedown="onMouseDown"
-    @mousemove="onMouseMove"
-    @mouseup="onMouseUp"
-    @mouseleave="onMouseUp"
-    @touchstart="onTouchStart"
-    @touchmove="onTouchMove"
-    @touchend="onTouchEnd"
-  >
-    <transition-group
-      name="slide"
-      tag="div"
-      class="date-list"
-      :css="false"
-      @before-enter="beforeEnter"
-      @enter="enter"
-      @after-enter="afterEnter"
-    >
-      <div
-        v-for="date in dates"
-        :key="date.value"
-        class="date-item"
-        :class="{active: selected === date.value}"
-        @click="selectDate(date.value)"
-      >
-        <div class="date-num">{{ date.month }}/{{ date.day }}</div>
-        <div class="date-week">{{ date.week }}</div>
+  <div class="date-selector-container">
+    <button class="nav-button" @click="prevDay">‹</button>
+
+    <div class="date-selector">
+      <div class="date-list">
+        <div
+          v-for="date in dates"
+          :key="date.value"
+          class="date-item"
+          :class="[
+            { active: selected === date.value },
+            getDayClass(date.week)
+          ]"
+          @click="selectDate(date.value)"
+        >
+          <div class="date-num">{{ date.day }}</div>
+          <div class="date-week">{{ date.week }}</div>
+        </div>
       </div>
-    </transition-group>
+    </div>
+
+    <button class="nav-button" @click="nextDay">›</button>
   </div>
 </template>
 
 <script>
-function getDates(startDay = null) {
+function getDates(startDay) {
   const days = ['일', '월', '화', '수', '목', '금', '토']
   const arr = []
-  let today = new Date()
-  if (startDay) {
-    today = new Date(startDay)
-  }
+  const base = new Date(startDay)
+
   for (let i = 0; i < 7; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
+    const d = new Date(base)
+    d.setDate(base.getDate() + i)
     arr.push({
       value: d.toISOString().slice(0, 10),
       month: d.getMonth() + 1,
@@ -53,24 +42,21 @@ function getDates(startDay = null) {
   }
   return arr
 }
+
 function addDays(dateStr, n) {
   const d = new Date(dateStr)
   d.setDate(d.getDate() + n)
   return d.toISOString().slice(0, 10)
 }
+
 export default {
   emits: ['update:day'],
   data() {
-    const today = new Date()
-    const start = today.toISOString().slice(0, 10)
+    const today = new Date().toISOString().slice(0, 10)
     return {
-      startDay: start,
-      dates: getDates(start),
-      selected: null,
-      isDragging: false,
-      dragStartX: 0,
-      dragDelta: 0,
-      slideDirection: 0 // -1: left, 1: right
+      startDay: today,
+      dates: getDates(today),
+      selected: today
     }
   },
   methods: {
@@ -78,111 +64,82 @@ export default {
       this.selected = val
       this.$emit('update:day', val)
     },
-    // 마우스 드래그
-    onMouseDown(e) {
-      this.isDragging = true
-      this.dragStartX = e.pageX
-      this.dragDelta = 0
-    },
-    onMouseMove(e) {
-      if (!this.isDragging) return
-      this.dragDelta = e.pageX - this.dragStartX
-    },
-    onMouseUp() {
-      if (!this.isDragging) return
-      if (this.dragDelta > 40) {
-        this.slideDirection = 1
-        this.moveDates(-1)
-      } else if (this.dragDelta < -40) {
-        this.slideDirection = -1
-        this.moveDates(1)
-      }
-      this.isDragging = false
-      this.dragDelta = 0
-    },
-    // 터치 드래그
-    onTouchStart(e) {
-      this.isDragging = true
-      this.dragStartX = e.touches[0].pageX
-      this.dragDelta = 0
-    },
-    onTouchMove(e) {
-      if (!this.isDragging) return
-      this.dragDelta = e.touches[0].pageX - this.dragStartX
-    },
-    onTouchEnd() {
-      if (!this.isDragging) return
-      if (this.dragDelta > 40) {
-        this.slideDirection = 1
-        this.moveDates(-1)
-      } else if (this.dragDelta < -40) {
-        this.slideDirection = -1
-        this.moveDates(1)
-      }
-      this.isDragging = false
-      this.dragDelta = 0
-    },
-    moveDates(n) {
-      this.startDay = addDays(this.startDay, n)
+    prevDay() {
+      this.startDay = addDays(this.startDay, -1)
       this.dates = getDates(this.startDay)
     },
-    // 트랜지션 애니메이션
-    beforeEnter(el) {
-      el.style.transition = 'none';
-      el.style.transform = `translateX(${this.slideDirection * 100}%)`;
+    nextDay() {
+      this.startDay = addDays(this.startDay, 1)
+      this.dates = getDates(this.startDay)
     },
-    enter(el, done) {
-      setTimeout(() => {
-        el.style.transition = 'transform 0.3s cubic-bezier(.55,0,.1,1)';
-        el.style.transform = 'translateX(0)';
-        el.addEventListener('transitionend', done);
-      });
-    },
-    afterEnter(el) {
-      el.style.transition = '';
-      el.style.transform = '';
-      this.slideDirection = 0;
+    getDayClass(week) {
+      if (week === '일') return 'sunday'
+      if (week === '토') return 'saturday'
+      return 'weekday'
     }
   }
 }
 </script>
 
 <style scoped>
-.date-selector {
+.date-selector-container {
   display: flex;
-  justify-content: space-between;
-  background: #fff;
-  padding: 0 12px 0 12px;
-  border-bottom: 1px solid #eee;
-  user-select: none;
-  cursor: grab;
+  align-items: center;
+  background: #fdfdfd;
+  border-bottom: 1px solid #ddd;
+  padding: 8px;
 }
+
+.nav-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #555;
+  cursor: pointer;
+  padding: 0 12px;
+  transition: color 0.3s;
+}
+
+.nav-button:hover {
+  color: #f0852b; /* 톤 다운된 오렌지 */
+}
+
+.date-selector {
+  flex: 1;
+  overflow: hidden;
+}
+
 .date-list {
   display: flex;
-  flex: 1;
+  justify-content: space-between;
+  width: 100%;
 }
+
 .date-item {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 0;
-  padding: 12px 0;
-  color: #888;
-  font-size: 15px;
   cursor: pointer;
-  margin: 0 2px;
-}
-.date-item.active {
-  color: #fff;
-  background: #3578ff;
+  text-align: center;
+  padding: 10px 0;
   border-radius: 16px;
+  font-size: 14px;
+  transition: background 0.3s, color 0.3s;
 }
+
+.date-item.active {
+  background: #ffe4c2;
+  color: #ff7f27;    
+  font-weight: bold;
+}
+
 .date-num {
   font-size: 16px;
   font-weight: bold;
 }
+
 .date-week {
   font-size: 13px;
 }
+
+/* 요일별 색상 */
+
 </style> 

@@ -62,7 +62,7 @@ export default {
   transition: border 0.2s;
 }
 .category-item.active {
-  border: 2px solid #3578ff;
+  border: 2px solid #ff8d35;
 }
 .icon {
   font-size: 56px;

@@ -63,7 +63,7 @@ export default {
   border-radius: 16px;
   padding: 6px 14px;
   font-size: 14px;
-  color: #3578ff;
+  color: rgb(239, 141, 99);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -85,7 +85,7 @@ export default {
   padding: 10px 18px;
   cursor: pointer;
   font-size: 15px;
-  color: #3578ff;
+  color: #000000;
   white-space: nowrap;
 }
 .dropdown-item:hover {

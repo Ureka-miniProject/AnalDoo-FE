@@ -15,7 +15,6 @@ import CategoryBar from './CategoryBar.vue'
 import DateSelector from './DateSelector.vue'
 import FilterBar from './FilterBar.vue'
 import MatchList from './MatchList.vue'
-import FooterBar from './FooterBar.vue'
 
 export default {
   name: 'HomePage',
@@ -25,12 +24,12 @@ export default {
     DateSelector,
     FilterBar,
     MatchList,
-    FooterBar
   },
   data() {
-    return {
-      selectedType: null,
-      selectedDay: null,
+  const today = new Date().toISOString().slice(0, 10)
+  return {
+    selectedType: '풋볼',
+      selectedDay: today, 
       selectedRegion: '서울'
     }
   },
