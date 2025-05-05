@@ -85,8 +85,8 @@ export default {
 .date-selector-container {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #eee;
+  background: #fdfdfd;
+  border-bottom: 1px solid #ddd;
   padding: 8px;
 }
 
@@ -94,13 +94,14 @@ export default {
   background: none;
   border: none;
   font-size: 20px;
-  color: #666;
+  color: #555;
   cursor: pointer;
   padding: 0 12px;
+  transition: color 0.3s;
 }
 
 .nav-button:hover {
-  color: #3578ff;
+  color: #f0852b; /* 톤 다운된 오렌지 */
 }
 
 .date-selector {
@@ -119,17 +120,15 @@ export default {
   cursor: pointer;
   text-align: center;
   padding: 10px 0;
-  border-radius: 50%;
+  border-radius: 16px;
   font-size: 14px;
-  transition: background 0.3s, color 0.3s, border-radius 0.1s ease-out;
+  transition: background 0.3s, color 0.3s;
 }
 
 .date-item.active {
-  background: #ff8d35;
-  color: white;
+  background: #ffe4c2;
+  color: #ff7f27;    
   font-weight: bold;
-
-  border-radius: 16px;
 }
 
 .date-num {
@@ -142,13 +141,5 @@ export default {
 }
 
 /* 요일별 색상 */
-.sunday {
-  color: #e74c3c;
-}
-.saturday {
-  color: #3c64e7;
-}
-.weekday {
-  color: #333;
-}
+
 </style> 
