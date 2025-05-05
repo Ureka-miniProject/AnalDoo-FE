@@ -1,17 +1,9 @@
 <template>
   <div class="date-selector-container">
-    <button class="nav-button" @click="prevWeek">‹</button>
+    <button class="nav-button" @click="prevDay">‹</button>
 
-    <div class="date-selector" ref="scrollArea">
-      <transition-group
-        name="slide"
-        tag="div"
-        class="date-list"
-        :css="false"
-        @before-enter="beforeEnter"
-        @enter="enter"
-        @after-enter="afterEnter"
-      >
+    <div class="date-selector">
+      <div class="date-list">
         <div
           v-for="date in dates"
           :key="date.value"
@@ -25,24 +17,22 @@
           <div class="date-num">{{ date.day }}</div>
           <div class="date-week">{{ date.week }}</div>
         </div>
-      </transition-group>
+      </div>
     </div>
 
-    <button class="nav-button" @click="nextWeek">›</button>
+    <button class="nav-button" @click="nextDay">›</button>
   </div>
 </template>
 
 <script>
-function getDates(startDay = null) {
+function getDates(startDay) {
   const days = ['일', '월', '화', '수', '목', '금', '토']
   const arr = []
-  let today = new Date()
-  if (startDay) {
-    today = new Date(startDay)
-  }
+  const base = new Date(startDay)
+
   for (let i = 0; i < 7; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
+    const d = new Date(base)
+    d.setDate(base.getDate() + i)
     arr.push({
       value: d.toISOString().slice(0, 10),
       month: d.getMonth() + 1,
@@ -52,24 +42,21 @@ function getDates(startDay = null) {
   }
   return arr
 }
+
 function addDays(dateStr, n) {
   const d = new Date(dateStr)
   d.setDate(d.getDate() + n)
   return d.toISOString().slice(0, 10)
 }
+
 export default {
   emits: ['update:day'],
   data() {
-    const today = new Date()
-    const start = today.toISOString().slice(0, 10)
+    const today = new Date().toISOString().slice(0, 10)
     return {
-      startDay: start,
-      dates: getDates(start),
-      selected: start,
-      isDragging: false,
-      dragStartX: 0,
-      dragDelta: 0,
-      slideDirection: 0 // -1: left, 1: right
+      startDay: today,
+      dates: getDates(today),
+      selected: today
     }
   },
   methods: {
@@ -77,84 +64,18 @@ export default {
       this.selected = val
       this.$emit('update:day', val)
     },
-    prevWeek() {
-      this.slideDirection = 1
-      this.moveDates(-1)
+    prevDay() {
+      this.startDay = addDays(this.startDay, -1)
+      this.dates = getDates(this.startDay)
     },
-    nextWeek() {
-      this.slideDirection = -1
-      this.moveDates(1)
+    nextDay() {
+      this.startDay = addDays(this.startDay, 1)
+      this.dates = getDates(this.startDay)
     },
     getDayClass(week) {
       if (week === '일') return 'sunday'
       if (week === '토') return 'saturday'
       return 'weekday'
-    },
-
-    // 마우스 드래그
-    onMouseDown(e) {
-      this.isDragging = true
-      this.dragStartX = e.pageX
-      this.dragDelta = 0
-    },
-    onMouseMove(e) {
-      if (!this.isDragging) return
-      this.dragDelta = e.pageX - this.dragStartX
-    },
-    onMouseUp() {
-      if (!this.isDragging) return
-      if (this.dragDelta > 40) {
-        this.slideDirection = 1
-        this.moveDates(-1)
-      } else if (this.dragDelta < -40) {
-        this.slideDirection = -1
-        this.moveDates(1)
-      }
-      this.isDragging = false
-      this.dragDelta = 0
-    },
-    // 터치 드래그
-    onTouchStart(e) {
-      this.isDragging = true
-      this.dragStartX = e.touches[0].pageX
-      this.dragDelta = 0
-    },
-    onTouchMove(e) {
-      if (!this.isDragging) return
-      this.dragDelta = e.touches[0].pageX - this.dragStartX
-    },
-    onTouchEnd() {
-      if (!this.isDragging) return
-      if (this.dragDelta > 40) {
-        this.slideDirection = 1
-        this.moveDates(-1)
-      } else if (this.dragDelta < -40) {
-        this.slideDirection = -1
-        this.moveDates(1)
-      }
-      this.isDragging = false
-      this.dragDelta = 0
-    },
-    moveDates(n) {
-      this.startDay = addDays(this.startDay, n)
-      this.dates = getDates(this.startDay)
-    },
-    // 트랜지션 애니메이션
-    beforeEnter(el) {
-      el.style.transition = 'none';
-      el.style.transform = `translateX(${this.slideDirection * 100}%)`;
-    },
-    enter(el, done) {
-      setTimeout(() => {
-        el.style.transition = 'transform 0.3s cubic-bezier(.55,0,.1,1)';
-        el.style.transform = 'translateX(0)';
-        el.addEventListener('transitionend', done);
-      });
-    },
-    afterEnter(el) {
-      el.style.transition = '';
-      el.style.transform = '';
-      this.slideDirection = 0;
     }
   }
 }
@@ -230,5 +151,4 @@ export default {
 .weekday {
   color: #333;
 }
-
 </style> 
