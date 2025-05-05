@@ -15,7 +15,6 @@ import CategoryBar from './CategoryBar.vue'
 import DateSelector from './DateSelector.vue'
 import FilterBar from './FilterBar.vue'
 import MatchList from './MatchList.vue'
-import FooterBar from './FooterBar.vue'
 
 export default {
   name: 'HomePage',
@@ -25,7 +24,6 @@ export default {
     DateSelector,
     FilterBar,
     MatchList,
-    FooterBar
   },
   data() {
   const today = new Date().toISOString().slice(0, 10)
