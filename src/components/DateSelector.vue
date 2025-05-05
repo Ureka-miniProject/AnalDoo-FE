@@ -125,7 +125,7 @@ export default {
 }
 
 .date-item.active {
-  background: #3578ff;
+  background: #ff8d35;
   color: white;
   font-weight: bold;
 
