@@ -28,9 +28,10 @@ export default {
     FooterBar
   },
   data() {
-    return {
-      selectedType: null,
-      selectedDay: null,
+  const today = new Date().toISOString().slice(0, 10)
+  return {
+    selectedType: '풋볼',
+      selectedDay: today, 
       selectedRegion: '서울'
     }
   },

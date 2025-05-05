@@ -1,35 +1,34 @@
 <template>
-  <div
-    class="date-selector"
-    ref="scrollArea"
-    @mousedown="onMouseDown"
-    @mousemove="onMouseMove"
-    @mouseup="onMouseUp"
-    @mouseleave="onMouseUp"
-    @touchstart="onTouchStart"
-    @touchmove="onTouchMove"
-    @touchend="onTouchEnd"
-  >
-    <transition-group
-      name="slide"
-      tag="div"
-      class="date-list"
-      :css="false"
-      @before-enter="beforeEnter"
-      @enter="enter"
-      @after-enter="afterEnter"
-    >
-      <div
-        v-for="date in dates"
-        :key="date.value"
-        class="date-item"
-        :class="{active: selected === date.value}"
-        @click="selectDate(date.value)"
+  <div class="date-selector-container">
+    <button class="nav-button" @click="prevWeek">‹</button>
+
+    <div class="date-selector" ref="scrollArea">
+      <transition-group
+        name="slide"
+        tag="div"
+        class="date-list"
+        :css="false"
+        @before-enter="beforeEnter"
+        @enter="enter"
+        @after-enter="afterEnter"
       >
-        <div class="date-num">{{ date.month }}/{{ date.day }}</div>
-        <div class="date-week">{{ date.week }}</div>
-      </div>
-    </transition-group>
+        <div
+          v-for="date in dates"
+          :key="date.value"
+          class="date-item"
+          :class="[
+            { active: selected === date.value },
+            getDayClass(date.week)
+          ]"
+          @click="selectDate(date.value)"
+        >
+          <div class="date-num">{{ date.day }}</div>
+          <div class="date-week">{{ date.week }}</div>
+        </div>
+      </transition-group>
+    </div>
+
+    <button class="nav-button" @click="nextWeek">›</button>
   </div>
 </template>
 
@@ -66,7 +65,7 @@ export default {
     return {
       startDay: start,
       dates: getDates(start),
-      selected: null,
+      selected: start,
       isDragging: false,
       dragStartX: 0,
       dragDelta: 0,
@@ -78,6 +77,20 @@ export default {
       this.selected = val
       this.$emit('update:day', val)
     },
+    prevWeek() {
+      this.slideDirection = 1
+      this.moveDates(-1)
+    },
+    nextWeek() {
+      this.slideDirection = -1
+      this.moveDates(1)
+    },
+    getDayClass(week) {
+      if (week === '일') return 'sunday'
+      if (week === '토') return 'saturday'
+      return 'weekday'
+    },
+
     // 마우스 드래그
     onMouseDown(e) {
       this.isDragging = true
@@ -148,41 +161,74 @@ export default {
 </script>
 
 <style scoped>
-.date-selector {
+.date-selector-container {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   background: #fff;
-  padding: 0 12px 0 12px;
   border-bottom: 1px solid #eee;
-  user-select: none;
-  cursor: grab;
+  padding: 8px;
 }
+
+.nav-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 0 12px;
+}
+
+.nav-button:hover {
+  color: #3578ff;
+}
+
+.date-selector {
+  flex: 1;
+  overflow: hidden;
+}
+
 .date-list {
   display: flex;
-  flex: 1;
+  justify-content: space-between;
+  width: 100%;
 }
+
 .date-item {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 0;
-  padding: 12px 0;
-  color: #888;
-  font-size: 15px;
   cursor: pointer;
-  margin: 0 2px;
+  text-align: center;
+  padding: 10px 0;
+  border-radius: 50%;
+  font-size: 14px;
+  transition: background 0.3s, color 0.3s, border-radius 0.1s ease-out;
 }
+
 .date-item.active {
-  color: #fff;
   background: #3578ff;
+  color: white;
+  font-weight: bold;
+
   border-radius: 16px;
 }
+
 .date-num {
   font-size: 16px;
   font-weight: bold;
 }
+
 .date-week {
   font-size: 13px;
 }
+
+/* 요일별 색상 */
+.sunday {
+  color: #e74c3c;
+}
+.saturday {
+  color: #3c64e7;
+}
+.weekday {
+  color: #333;
+}
+
 </style> 
