@@ -26,7 +26,7 @@
         <div class="match-date">🗓️ {{ formattedMatchDate }}</div>
         <div class="match-location">📍 {{ match.address.fullAddress }}</div>
         <div class="price">{{ match.entryFee.toLocaleString() }}원</div>
-        <button class="apply-btn">신청하기</button>
+        <button class="apply-btn" @click="requestPay">신청하기</button>
       </div>
     </div>
   </div>
@@ -34,6 +34,7 @@
 
 <script>
 import HeaderBar from './HeaderBar.vue'
+import axios from 'axios'
 
 export default {
   name: 'MatchDetail',
@@ -78,7 +79,53 @@ export default {
   methods: {
     goHome() {
       this.$router.push('/')
+    },
+    requestPay() {
+      const IMP = window.IMP
+      IMP.init(process.env.VUE_APP_IAMPORT_KEY)
+
+
+
+
+      // 1 은 임시 예약 아이디 
+      axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/prepare/1`)
+        .then(response => {
+          IMP.request_pay({
+            channelKey: response.data.channelKey,
+            pay_method: response.data.payMethod,
+            merchant_uid: response.data.merchantUId,
+            name: response.data.name,
+            amount: response.data.amount,
+            buyer_email: response.data.buyerEmail,
+            buyer_name: response.data.buyerName
+          }, (response) => {
+            // 결제창이 닫힌 경우 
+            if (!response.success) {
+              return
+            }
+
+            if (response.error_code != null) {
+              return alert(`결제에 실패하였습니다. 에러 내용: ${response.error_msg}`)
+            }
+
+            axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/verify`, {
+              impUid: response.imp_uid,
+              merchantUid: response.merchant_uid,
+              amount: response.paid_amount
+            }).then(() => {
+              alert('결제가 성공적으로 완료되었습니다.')
+            }).catch(() => {
+              alert('결제 검증에 실패했습니다.')
+            })
+          })
+        })
     }
+  },
+  mounted() {
+    // iamport 스크립트 동적 로드
+    const script = document.createElement('script')
+    script.src = 'https://cdn.iamport.kr/v1/iamport.js'
+    document.head.appendChild(script)
   }
 }
 </script>
