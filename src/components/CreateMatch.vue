@@ -64,14 +64,7 @@
         </div>
 
         <div class="form-row">
-          <div class="form-group half">
-            <label>최소 참가 인원</label>
-            <div class="input-with-unit">
-              <input v-model.number="formData.minCount" type="number" required min="1">
-              <span class="unit">명</span>
-            </div>
-          </div>
-          <div class="form-group half">
+          <div class="form-group">
             <label>최대 참가 인원</label>
             <div class="input-with-unit">
               <input v-model.number="formData.maxCount" type="number" required min="1">
@@ -140,7 +133,6 @@ export default {
         matchTime: '',
         entryFee: 0,
         reward: 0,
-        minCount: 1,
         maxCount: 1,
         local: '',
         street: '',
