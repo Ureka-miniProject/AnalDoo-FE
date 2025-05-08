@@ -1,6 +1,6 @@
 <template>
   <header class="header-bar">
-    <button class="host-btn">대회 주최하기</button>
+    <button class="host-btn" @click="goToCreate">대회 주최하기</button>
     <img class="logo" :src="logo" alt="Logo" @click="$emit('click-logo')" />
     <button class="profile-btn">
       <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 8-4 8-4s8 0 8 4"/></svg>
@@ -13,6 +13,11 @@ export default {
   data() {
     return {
       logo: require('@/image/logo.png')
+    }
+  },
+  methods: {
+    goToCreate() {
+      this.$router.push('/create')
     }
   }
 }
