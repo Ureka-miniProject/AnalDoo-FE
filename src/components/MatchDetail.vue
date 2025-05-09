@@ -42,7 +42,7 @@ export default {
   data() {
     return {
       match: {
-        id: 2,
+        id: 1,
         name: '풋살 페스티벌',
         content: '이 대회는 누구나 즐겁게 참여할 수 있는 친선 경기입니다. 경기 규칙은 현장 공지 예정이며, 페어플레이 정신을 중요시합니다.',
         period: {
@@ -84,11 +84,15 @@ export default {
       const IMP = window.IMP
       IMP.init(process.env.VUE_APP_IAMPORT_KEY)
 
-
-
-
-      // 1 은 임시 예약 아이디 
-      axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/prepare/1`)
+      // 먼저 예약 요청
+      axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/reservation`, {
+        competitionId: this.match.id
+      })
+        .then(response => {
+          // 예약 성공 시 결제 준비 요청
+          const reservationId = response.data.reservationId
+          return axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/prepare/${reservationId}`)
+        })
         .then(response => {
           IMP.request_pay({
             channelKey: response.data.channelKey,
@@ -118,6 +122,11 @@ export default {
               alert('결제 검증에 실패했습니다.')
             })
           })
+        })
+        .catch(error => {
+          if (error.response) {
+            alert(error.response.data.message)
+          }
         })
     }
   },
