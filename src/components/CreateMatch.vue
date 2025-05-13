@@ -78,7 +78,12 @@
           <div class="address-inputs">
             <div class="form-row">
               <div class="form-group half">
-                <input v-model="formData.local" type="text" required placeholder="시/도">
+                <select v-model="formData.local" required>
+                  <option value="" disabled selected>도시를 선택하세요</option>
+                  <option v-for="local in Object.values(LOCALS)" :key="local" :value="local">
+                    {{ LOCAL_LABELS[local] }}
+                  </option>
+                </select>
               </div>
               <div class="form-group half">
                 <input v-model="formData.street" type="text" required placeholder="도로명 주소">
@@ -117,12 +122,15 @@
 
 <script>
 import { competitionAPI } from '@/api'
+import { LOCALS, LOCAL_LABELS } from '@/constants/sportIcons'
 
 export default {
   name: 'CreateMatch',
   data() {
     return {
       showAlert: false,
+      LOCALS,
+      LOCAL_LABELS,
       formData: {
         name: '',
         sportType: 'FOOTBALL',

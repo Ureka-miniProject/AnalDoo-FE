@@ -7,21 +7,23 @@
       :class="{active: selected === cat.type}"
       @click="selectCategory(cat.type)"
     >
-      <span class="icon">{{ cat.icon }}</span>
-      <span>{{ cat.label }}</span>
+      <span class="icon">{{ getSportIcon(cat.type) }}</span>
+      <span>{{ getSportLabel(cat.type) }}</span>
     </div>
   </div>
 </template>
 
 <script>
+import { getSportIcon, getSportLabel } from '@/constants/sportIcons'
+
 export default {
   emits: ['update:type'],
   data() {
     return {
       categories: [
-        { type: '풋볼', label: '풋볼', icon: '⚽' },
-        { type: '배드민턴', label: '배드민턴', icon: '🏸' },
-        { type: '주짓수', label: '주짓수', icon: '🤼‍♂️' }
+        { type: 'FOOTBALL' },
+        { type: 'BADMINTON' },
+        { type: 'JIUJITSU' }
       ],
       selected: null
     }
@@ -30,7 +32,9 @@ export default {
     selectCategory(type) {
       this.selected = type
       this.$emit('update:type', type)
-    }
+    },
+    getSportIcon,
+    getSportLabel
   }
 }
 </script>
@@ -59,11 +63,19 @@ export default {
   gap: 16px;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: border 0.2s;
+  transition: all 0.2s ease;
 }
+
+.category-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .category-item.active {
-  border: 2px solid #ff8d35;
+  border: 2px solid #3578ff;
+  box-shadow: 0 4px 12px rgba(53, 120, 255, 0.2);
 }
+
 .icon {
   font-size: 56px;
 }

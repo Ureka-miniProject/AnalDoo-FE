@@ -126,39 +126,55 @@ export default {
   align-items: center;
   min-height: 100vh;
   background-color: #f5f5f5;
+  padding: 2rem;
+  box-sizing: border-box;
 }
 
 .signup-box {
   background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 3.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
+  margin: auto;
+  box-sizing: border-box;
 }
 
 h2 {
   text-align: center;
   color: #333;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+  font-size: 2rem;
+}
+
+form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  max-width: 400px;
 }
 
 label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
   color: #666;
+  font-size: 1.1rem;
 }
 
 input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 1rem;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  box-sizing: border-box;
 }
 
 input:focus {
@@ -166,16 +182,28 @@ input:focus {
   border-color: #4a90e2;
 }
 
+.error-input {
+  border-color: #dc3545;
+}
+
+.field-error {
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  display: block;
+}
+
 .signup-button {
   width: 100%;
-  padding: 0.75rem;
+  max-width: 400px;
+  padding: 1rem;
   background-color: #4a90e2;
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
   cursor: pointer;
-  margin-top: 1rem;
+  margin-top: 2rem;
 }
 
 .signup-button:hover {
@@ -188,15 +216,17 @@ input:focus {
 }
 
 .additional-options {
-  margin-top: 1rem;
+  margin-top: 2rem;
   text-align: center;
   color: #666;
+  font-size: 1rem;
 }
 
 .additional-options a {
   color: #4a90e2;
   text-decoration: none;
   margin-left: 0.5rem;
+  font-size: 1rem;
 }
 
 .additional-options a:hover {
@@ -210,14 +240,35 @@ input:focus {
   text-align: center;
 }
 
-.field-error {
-  color: #dc3545;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
-  display: block;
-}
+@media (max-width: 600px) {
+  .signup-container {
+    padding: 1rem;
+  }
 
-.error-input {
-  border-color: #dc3545 !important;
+  .signup-box {
+    padding: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .form-group {
+    max-width: 100%;
+  }
+
+  .signup-button {
+    max-width: 100%;
+  }
+
+  label {
+    font-size: 1rem;
+  }
+
+  input {
+    font-size: 1rem;
+    padding: 0.875rem;
+  }
 }
 </style> 
