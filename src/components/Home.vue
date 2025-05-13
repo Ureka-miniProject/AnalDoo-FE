@@ -1,6 +1,5 @@
 <template>
-  <div class="app">
-    <HeaderBar />
+  <div class="home">
     <CategoryBar @update:type="onType" />
     <DateSelector @update:day="onDay" />
     <FilterBar @update:region="onRegion" />
@@ -10,7 +9,6 @@
 </template>
 
 <script>
-import HeaderBar from './HeaderBar.vue'
 import CategoryBar from './CategoryBar.vue'
 import DateSelector from './DateSelector.vue'
 import FilterBar from './FilterBar.vue'
@@ -19,7 +17,6 @@ import MatchList from './MatchList.vue'
 export default {
   name: 'HomePage',
   components: {
-    HeaderBar,
     CategoryBar,
     DateSelector,
     FilterBar,
@@ -65,7 +62,7 @@ export default {
 </script>
 
 <style>
-.app {
+.home {
   font-family: Arial, sans-serif;
   background: #f7f7f7;
   min-height: 100vh;

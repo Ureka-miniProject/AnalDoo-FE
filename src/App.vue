@@ -1,10 +1,23 @@
 <template>
+  <div class="app">
+    <HeaderBar @click-logo="goHome" />
   <router-view />
+  </div>
 </template>
 
 <script>
+import HeaderBar from './components/HeaderBar.vue'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    HeaderBar
+  },
+  methods: {
+    goHome() {
+      this.$router.push('/')
+    }
+  }
 }
 </script>
 

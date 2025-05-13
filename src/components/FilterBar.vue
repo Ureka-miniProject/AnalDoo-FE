@@ -1,21 +1,30 @@
 <template>
   <div class="filter-bar">
     <div style="position:relative;">
-      <button ref="regionBtn" class="filter-btn" @click="toggleDropdown">{{ selectedRegion }} ▼</button>
+      <button ref="regionBtn" class="filter-btn" @click="toggleDropdown">{{ getLocalLabel(selectedRegion) }} ▼</button>
       <div v-if="showDropdown" class="dropdown" :style="dropdownStyle">
-        <div v-for="region in regions" :key="region" class="dropdown-item" @click="selectRegion(region)">{{ region }}</div>
+        <div 
+          v-for="region in regions" 
+          :key="region" 
+          class="dropdown-item" 
+          @click="selectRegion(region)"
+        >
+          {{ getLocalLabel(region) }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { LOCALS, getLocalLabel } from '@/constants/sportIcons'
+
 export default {
   emits: ['update:region'],
   data() {
     return {
-      regions: ['서울', '광주', '대구'],
-      selectedRegion: '서울',
+      regions: Object.keys(LOCALS),
+      selectedRegion: 'SEOUL',
       showDropdown: false,
       dropdownStyle: {}
     }
@@ -43,7 +52,8 @@ export default {
       this.selectedRegion = region
       this.showDropdown = false
       this.$emit('update:region', region)
-    }
+    },
+    getLocalLabel
   }
 }
 </script>
