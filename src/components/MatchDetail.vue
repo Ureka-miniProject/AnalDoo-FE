@@ -90,7 +90,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import api from '@/api'
 import { getSportIcon, getSportLabel, COMPETITION_STATUS, COMPETITION_STATUS_LABELS, COMPETITION_STATUS_COLORS } from '@/constants/sportIcons'
 
 export default {
@@ -157,13 +157,13 @@ export default {
       IMP.init(process.env.VUE_APP_IAMPORT_KEY)
 
       // 먼저 예약 요청
-      axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/reservation`, {
+      api.post('/api/v1/reservation', {
         competitionId: this.match.id
       })
         .then(response => {
           // 예약 성공 시 결제 준비 요청
           const reservationId = response.data.reservationId
-          return axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/prepare/${reservationId}`)
+          return api.post(`/api/v1/payments/prepare/${reservationId}`)
         })
         .then(response => {
           IMP.request_pay({
@@ -184,7 +184,7 @@ export default {
               return alert(`결제에 실패하였습니다. 에러 내용: ${response.error_msg}`)
             }
 
-            axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/verify`, {
+            api.post('/api/v1/payments/verify', {
               impUid: response.imp_uid,
               merchantUid: response.merchant_uid,
               amount: response.paid_amount
