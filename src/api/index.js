@@ -6,6 +6,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true // 모든 요청에 쿠키 포함
 });
 
 // Request 인터셉터 추가
@@ -22,62 +23,96 @@ api.interceptors.request.use(
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Response 인터셉터 추가 (토큰 만료 처리)
+// 토큰 재발급 중인지 확인하는 플래그
+let isRefreshing = false;
+// 재발급 대기 중인 요청들을 저장하는 배열
+let refreshSubscribers = [];
+
+// 대기 중인 요청에 토큰을 적용해 실행
+const onRefreshed = (token) => {
+    refreshSubscribers.forEach(callback => callback(token));
+    refreshSubscribers = [];
+};
+
+// 재발급 대기 큐에 콜백 추가
+const addRefreshSubscriber = (callback) => {
+    refreshSubscribers.push(callback);
+};
+
+// Response 인터셉터 추가 (401, 403 처리)
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const originalRequest = error.config;
-        
-        // 토큰 만료 에러이고, 재시도하지 않은 요청인 경우
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            
+        const { config, response } = error;
+
+        // 토큰 만료 (401 + code === 'ACCESS_TOKEN_EXPIRED') 처리
+        if (
+            response?.status === 401 &&
+            !config._retry &&
+            response?.data?.code === 'ACCESS_TOKEN_EXPIRED'
+        ) {
+            console.log('401 detected! Try reissue...');
+
+            if (isRefreshing) {
+                console.log('Already refreshing, queue request');
+                return new Promise(resolve => {
+                    addRefreshSubscriber(token => {
+                        config.headers.Authorization = `Bearer ${token}`;
+                        resolve(api(config));
+                    });
+                });
+            }
+
+            config._retry = true;
+            isRefreshing = true;
+
             try {
-                // 리프레시 토큰으로 새로운 액세스 토큰 발급
-                const refreshToken = localStorage.getItem('refreshToken');
-                const response = await api.post('/api/v1/users/refresh', { refreshToken });
-                const { accessToken } = response.data;
-                
-                // 새로운 액세스 토큰 저장
+                console.log('Try to call /reissue');
+                const reissueRes = await api.post('/api/v1/users/reissue');
+                const { accessToken } = reissueRes.data;
+
+                // 토큰 저장
                 localStorage.setItem('accessToken', accessToken);
-                
-                // 원래 요청의 Authorization 헤더 업데이트
-                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-                
-                // 원래 요청 재시도
-                return api(originalRequest);
+                config.headers.Authorization = `Bearer ${accessToken}`;
+
+                // 대기 중인 요청들에 새 토큰 전달
+                onRefreshed(accessToken);
+
+                return api(config);
             } catch (refreshError) {
-                // 리프레시 토큰도 만료된 경우 로그아웃 처리
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
+                console.error('Reissue failed:', refreshError);
+                localStorage.clear();
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
             }
         }
-        
+
+        // 접근 권한 없음 (403): 즉시 로그아웃
+        if (response?.status === 403) {
+            localStorage.clear();
+            window.location.href = '/login';
+            return Promise.reject(error);
+        }
+
         return Promise.reject(error);
     }
 );
 
 // 인증 관련 API
 export const authAPI = {
-    // 로그인
     login: (credentials) => api.post('/api/v1/users/login', credentials),
-    // 로그아웃
     logout: () => api.post('/api/v1/users/logout'),
-    // 회원가입
     register: (userData) => api.post('/api/v1/users/join', userData),
 };
 
 // 대회 관련 API
 export const competitionAPI = {
-    // 대회 생성
     createCompetition: (data) => api.post('/api/v1/competitions', data),
 };
 
-export default api; 
+export default api;
