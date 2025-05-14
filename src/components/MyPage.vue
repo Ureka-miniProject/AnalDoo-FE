@@ -1,65 +1,65 @@
 <template>
   <HeaderBar />
   <div class="mypage-container">
-    <aside class="profile-side">
-      <div class="nickname-row">
-        <span>{{ user.nickname }}</span>
-      </div>
-      <div class="info-list">
-        <div class="info-row">
-          <span class="info-label">이메일</span>
-          <span class="info-value">{{ user.email }}</span>
+    <div class="profile-header">
+      <div class="profile-info">
+        <div class="profile-avatar">
+          <svg width="60" height="60" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6" fill="#e0e7ef"/><ellipse cx="12" cy="19" rx="9" ry="5" fill="#e0e7ef"/></svg>
         </div>
-        <div class="info-row">
-          <span class="info-label">닉네임</span>
-          <span class="info-value">{{ user.nickname }}</span>
+        <div>
+          <div class="profile-email">{{ myInfo.email }}</div>
+          <div class="profile-nickname">{{ myInfo.nickname }}</div>
         </div>
+        <button class="edit-profile-btn" @click="openEditModal" title="프로필 편집">
+          <svg width="22" height="22" fill="none" stroke="#4a90e2" stroke-width="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z"/></svg>
+        </button>
       </div>
-      <div class="button-group">
-        <button class="main-btn" @click="showNicknameModal = true">닉네임 수정</button>
-        <button class="main-btn" @click="showPasswordModal = true">비밀번호 변경</button>
-      </div>
-    </aside>
-
-    <main class="contest-table-side">
-      <h2>신청한 대회</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>날짜</th>
-            <th>대회명</th>
-            <th>장소</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="contest in contests" :key="contest.id">
-            <td>{{ contest.date }}</td>
-            <td>{{ contest.name }}</td>
-            <td>{{ contest.location }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <!-- 개최한 대회 표도 추후 추가 가능 -->
-    </main>
-
-    <!-- 닉네임 수정 모달 -->
-    <div v-if="showNicknameModal" class="modal">
-      <div class="modal-content">
-        <h3>닉네임 수정</h3>
-        <input v-model="newNickname" placeholder="새 닉네임" />
-        <div v-if="nicknameError" class="error-message">{{ nicknameError }}</div>
-        <button @click="updateNickname">저장</button>
-        <button @click="() => { showNicknameModal = false; nicknameError = '' }">닫기</button>
+      <div class="profile-actions">
+        <button @click="fetchCreated" :class="{active: activeTab==='created'}">생성한 대회</button>
+        <button @click="fetchJoined" :class="{active: activeTab==='joined'}">참가한 대회</button>
       </div>
     </div>
-
-    <!-- 비밀번호 변경 모달 -->
-    <div v-if="showPasswordModal" class="modal">
+    <div class="competition-list">
+      <div v-if="loading" class="loading">불러오는 중...</div>
+      <div v-else-if="competitions.length === 0" class="empty">
+        {{ activeTab === 'created' ? '생성한 대회가 없습니다.' : '참가한 대회가 없습니다.' }}
+      </div>
+      <div v-else>
+        <div
+          v-for="item in competitions"
+          :key="item.id"
+          class="competition-card"
+          @click="goToDetail(item.id)"
+          style="cursor:pointer;"
+        >
+          <div class="comp-title">{{ item.name }}</div>
+          <div class="comp-info">
+            <span v-if="item.competitionDate">일시: {{ formatDate(item.competitionDate) }}</span>
+            <span v-if="item.local">장소: {{ item.local }}</span>
+            <span v-if="item.status">상태: {{ item.status }}</span>
+            <span v-if="item.sportType">종목: {{ item.sportType }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 프로필 편집 모달 -->
+    <div v-if="showEditModal" class="modal" @click.self="closeEditModal">
       <div class="modal-content">
-        <h3>비밀번호 변경</h3>
-        <input type="password" v-model="newPassword" placeholder="새 비밀번호" />
-        <button @click="updatePassword">저장</button>
-        <button @click="showPasswordModal = false">닫기</button>
+        <h3>프로필 편집</h3>
+        <label>닉네임</label>
+        <input v-model="editNickname" :disabled="editLoading" maxlength="20" />
+        <div v-if="nicknameError" class="error-message">{{ nicknameError }}</div>
+        <button @click="saveNickname" :disabled="editLoading">닉네임 저장</button>
+        <div class="divider"></div>
+        <button class="pw-toggle-btn" @click="showPwInput = !showPwInput">
+          {{ showPwInput ? '비밀번호 변경 취소' : '비밀번호 변경' }}
+        </button>
+        <div v-if="showPwInput" class="pw-change-area">
+          <input type="password" v-model="editPassword" placeholder="새 비밀번호" :disabled="editLoading" maxlength="20" />
+          <button @click="savePassword" :disabled="editLoading">비밀번호 저장</button>
+          <div v-if="pwError" class="error-message">{{ pwError }}</div>
+        </div>
+        <button class="close-btn" @click="closeEditModal">닫기</button>
       </div>
     </div>
   </div>
@@ -68,221 +68,245 @@
 <script setup>
 import HeaderBar from './HeaderBar.vue'
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../api'
 
-const user = ref({})
-const contests = ref([])
-const showNicknameModal = ref(false)
-const showPasswordModal = ref(false)
-const newNickname = ref('')
-const newPassword = ref('')
+const router = useRouter()
+const myInfo = ref({})
+const competitions = ref([])
+const activeTab = ref('created')
+const loading = ref(false)
+
+// 프로필 편집 모달 관련 상태
+const showEditModal = ref(false)
+const editNickname = ref('')
+const editPassword = ref('')
+const showPwInput = ref(false)
+const editLoading = ref(false)
 const nicknameError = ref('')
+const pwError = ref('')
+
+const openEditModal = () => {
+  editNickname.value = myInfo.value.nickname
+  editPassword.value = ''
+  showPwInput.value = false
+  nicknameError.value = ''
+  pwError.value = ''
+  showEditModal.value = true
+}
+const closeEditModal = () => {
+  showEditModal.value = false
+}
+
+const saveNickname = async () => {
+  nicknameError.value = ''
+  if (!editNickname.value.trim()) {
+    nicknameError.value = '닉네임을 입력하세요.'
+    return
+  }
+  editLoading.value = true
+  try {
+    await api.patch('/api/v1/users/nickname', { newNickname: editNickname.value })
+    myInfo.value.nickname = editNickname.value
+    closeEditModal()
+  } catch (e) {
+    nicknameError.value = e.response?.data?.message || '닉네임 변경 실패'
+  } finally {
+    editLoading.value = false
+  }
+}
+
+const savePassword = async () => {
+  pwError.value = ''
+  if (!editPassword.value || editPassword.value.length < 8) {
+    pwError.value = '비밀번호는 8자 이상이어야 합니다.'
+    return
+  }
+  editLoading.value = true
+  try {
+    await api.patch('/api/v1/users/updatePassword', { newPassword: editPassword.value })
+    showPwInput.value = false
+    editPassword.value = ''
+    pwError.value = '비밀번호가 변경되었습니다.'
+  } catch (e) {
+    pwError.value = e.response?.data?.message || '비밀번호 변경 실패'
+  } finally {
+    editLoading.value = false
+  }
+}
 
 // 사용자 정보 가져오기
-const fetchUser = async () => {
+const fetchMyInfo = async () => {
   try {
     const response = await api.get('/api/v1/users/mypage');
-    user.value = response.data;
-    newNickname.value = response.data.nickname;
+    myInfo.value = response.data;
   } catch (error) {
     console.error('Failed to fetch user data:', error);
   }
 };
 
 // 신청한 대회 불러오기
-const fetchContests = async () => {
+const fetchCreated = async () => {
+  activeTab.value = 'created'
+  loading.value = true
   try {
-    const response = await api.get('/api/v1/contests/applied');
-    contests.value = response.data;
+    const response = await api.get('/api/v1/users/my-created');
+    competitions.value = response.data;
   } catch (error) {
-    console.error('Failed to fetch contests:', error);
+    console.error('Failed to fetch created contests:', error);
+    competitions.value = []
+  } finally {
+    loading.value = false
   }
 };
+
+const fetchJoined = async () => {
+  activeTab.value = 'joined'
+  loading.value = true
+  try {
+    const response = await api.get('/api/v1/users/my-joined');
+    competitions.value = response.data;
+  } catch (error) {
+    console.error('Failed to fetch joined contests:', error);
+    competitions.value = []
+  } finally {
+    loading.value = false
+  }
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`
+}
+
+const goToDetail = (id) => {
+  router.push(`/match/${id}`)
+}
 
 onMounted(() => {
-  fetchUser();
-  fetchContests();
+  fetchMyInfo();
+  fetchCreated();
 });
-
-// 닉네임 업데이트
-const updateNickname = async () => {
-  nicknameError.value = '';
-  try {
-    await api.patch('/api/v1/users/updateNickname', 
-      { newNickname: newNickname.value }
-    );
-    user.value.nickname = newNickname.value;
-    showNicknameModal.value = false;
-    alert('닉네임이 변경되었습니다.');
-  } catch (error) {
-    nicknameError.value = error.response?.data?.message || '닉네임 변경 중 오류가 발생했습니다.';
-  }
-};
-
-// 비밀번호 업데이트
-const updatePassword = async () => {
-  try {
-    await api.patch('/api/v1/users/updatePassword', 
-      { newPassword: newPassword.value }
-    );
-    showPasswordModal.value = false;
-    newPassword.value = '';
-    alert('비밀번호가 변경되었습니다.');
-  } catch (error) {
-    alert('비밀번호 변경 중 오류가 발생했습니다.');
-  }
-};
 </script>
 
 <style scoped>
 .mypage-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 40px;
-  min-height: 100vh;
-  background: #f7f8fa;
-  padding: 40px 0;
-}
-
-.profile-side {
-  width: 320px;
-  min-width: 220px;
+  max-width: 600px;
+  margin: 40px auto;
   background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-  padding: 32px 28px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 2rem 1.5rem;
+}
+.profile-header {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 22px;
+  align-items: center;
+  margin-bottom: 2rem;
 }
-
-.nickname-row {
+.profile-info {
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-size: 1.5rem;
-  font-weight: 600;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.edit-profile-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  padding: 0.2rem;
+  position: absolute;
+  right: -36px;
+  top: 10px;
+  transition: background 0.15s;
+}
+.edit-profile-btn:hover {
+  background: #e0e7ef;
+  border-radius: 50%;
+}
+.profile-avatar {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: #e0e7ef;
+  display: flex; align-items: center; justify-content: center;
+}
+.profile-email {
+  font-size: 1.1rem;
+  color: #666;
+}
+.profile-nickname {
+  font-size: 1.3rem;
+  font-weight: bold;
   color: #222;
-  margin-bottom: 8px;
 }
-
-.info-list {
-  width: 100%;
-  margin: 18px 0 0 0;
+.profile-actions {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 1rem;
 }
-.info-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 1.08rem;
-  background: #f7f8fa;
-  border-radius: 7px;
-  padding: 10px 14px;
+.profile-actions button {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 20px;
+  background: #e0e7ef;
+  color: #333;
   font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
 }
-.info-label {
-  color: #4a90e2;
-  font-weight: 700;
-  min-width: 60px;
-  letter-spacing: 0.01em;
-}
-.info-value {
-  color: #222;
-  font-weight: 500;
-  word-break: break-all;
-}
-
-.button-group {
-  display: flex;
-  gap: 12px;
-  margin-top: 18px;
-  width: 100%;
-}
-.main-btn {
-  flex: 1 1 0;
+.profile-actions button.active,
+.profile-actions button:hover {
   background: #4a90e2;
   color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 0;
-  font-size: 1.08rem;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(74,144,226,0.07);
-  cursor: pointer;
-  transition: background 0.18s, box-shadow 0.18s;
 }
-.main-btn:hover {
-  background: #357abd;
-  box-shadow: 0 4px 16px rgba(74,144,226,0.13);
+.competition-list {
+  margin-top: 1.5rem;
 }
-
-.contest-table-side {
-  flex: 1;
-  min-width: 320px;
-  max-width: 700px;
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-  padding: 32px 36px;
-  margin-left: 0;
+.competition-card {
+  background: #f8fafd;
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-
-.contest-table-side h2 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-bottom: 18px;
-  color: #222;
+.comp-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
 }
-
-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+.comp-info span {
+  display: inline-block;
+  margin-right: 1.2rem;
+  color: #555;
+  font-size: 0.97rem;
 }
-
-th, td {
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 1rem;
+.loading, .empty {
+  text-align: center;
+  color: #aaa;
+  margin: 2rem 0;
+  font-size: 1.1rem;
 }
-
-th {
-  background: #f0f4f8;
-  color: #333;
-  font-weight: 600;
-  border-bottom: 2px solid #e0e6ed;
-}
-
-tr:not(:last-child) td {
-  border-bottom: 1px solid #f0f0f0;
-}
-
+/* 프로필 편집 모달 스타일 */
 .modal {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.25);
+  background: rgba(0,0,0,0.18);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000;
 }
 .modal-content {
   background: #fff;
-  padding: 2.5rem 2.5rem 2rem 2.5rem;
+  padding: 2.2rem 2.2rem 1.5rem 2.2rem;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.13);
   min-width: 320px;
   display: flex;
   flex-direction: column;
   gap: 18px;
   align-items: stretch;
+  position: relative;
 }
 .modal-content h3 {
   margin-bottom: 8px;
@@ -323,55 +347,29 @@ tr:not(:last-child) td {
 .modal-content button:last-child:hover {
   background: #f0f4f8;
 }
+.divider {
+  border-top: 1px solid #eee;
+  margin: 10px 0;
+}
+.pw-toggle-btn {
+  background: #e0e7ef !important;
+  color: #333 !important;
+  border: none !important;
+  margin-bottom: 0 !important;
+}
+.pw-change-area input {
+  margin-bottom: 6px;
+}
 .error-message {
   color: #e74c3c;
   margin: 8px 0;
   font-size: 0.98rem;
   font-weight: 500;
 }
-
-/* 반응형: 태블릿 이하 */
-@media (max-width: 900px) {
-  .mypage-container {
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-    padding: 24px 0;
-  }
-  .profile-side, .contest-table-side {
-    width: 90vw;
-    min-width: unset;
-    max-width: 600px;
-    padding: 24px 16px;
-  }
-  .contest-table-side {
-    margin-left: 0;
-  }
-}
-
-/* 반응형: 모바일 */
 @media (max-width: 600px) {
-  .mypage-container {
-    padding: 10px 0;
-    gap: 14px;
-  }
-  .profile-side, .contest-table-side {
-    width: 98vw;
-    max-width: 98vw;
-    padding: 16px 6px;
-    border-radius: 10px;
-  }
-  .nickname-row {
-    font-size: 1.1rem;
-    gap: 8px;
-  }
-  th, td {
-    padding: 8px 6px;
-    font-size: 0.98rem;
-  }
-  .modal-content {
-    min-width: 90vw;
-    padding: 1.2rem 0.5rem 1rem 0.5rem;
-  }
+  .mypage-container { padding: 1rem 0.3rem; }
+  .profile-header { padding: 0 0.2rem; }
+  .competition-card { padding: 0.7rem 0.5rem; }
+  .modal-content { min-width: 90vw; padding: 1.2rem 0.5rem 1rem 0.5rem; }
 }
 </style> 
