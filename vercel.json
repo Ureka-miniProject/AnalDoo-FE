@@ -1,7 +1,6 @@
 {
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/api/:path*", "dest": "http://3.35.10.14:8080/:path" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
