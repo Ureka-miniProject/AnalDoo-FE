@@ -6,6 +6,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true // 모든 요청에 withCredentials 추가
 });
 
 // Request 인터셉터 추가
@@ -27,39 +28,73 @@ api.interceptors.request.use(
     }
 );
 
+// 토큰 재발급 중인지 확인하는 플래그
+let isRefreshing = false;
+// 재발급 대기 중인 요청들을 저장하는 배열
+let refreshSubscribers = [];
+
+// 재발급 대기 중인 요청들을 실행하는 함수
+const onRefreshed = (token) => {
+    refreshSubscribers.forEach(callback => callback(token));
+    refreshSubscribers = [];
+};
+
+// 재발급 대기 중인 요청을 추가하는 함수
+const addRefreshSubscriber = (callback) => {
+    refreshSubscribers.push(callback);
+};
+
 // Response 인터셉터 추가 (토큰 만료 처리)
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const originalRequest = error.config;
-        
-        // 토큰 만료 에러이고, 재시도하지 않은 요청인 경우
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            
+        const { config, response } = error;
+        if (response?.status === 401 && !config._retry) {
+            console.log('401 detected! Try reissue...');
+            if (isRefreshing) {
+                console.log('Already refreshing, queue request');
+                return new Promise(resolve => {
+                    addRefreshSubscriber(token => {
+                        config.headers.Authorization = `Bearer ${token}`;
+                        resolve(api(config));
+                    });
+                });
+            }
+            config._retry = true;
+            isRefreshing = true;
             try {
-                // 리프레시 토큰으로 새로운 액세스 토큰 발급
-                const refreshToken = localStorage.getItem('refreshToken');
-                const response = await api.post('/api/v1/users/refresh', { refreshToken });
-                const { accessToken } = response.data;
+                console.log('Try to call /reissue');
+                const reissueRes = await api.post('/api/v1/users/reissue');
+                console.log('Reissue response:', reissueRes);
+                const { accessToken } = reissueRes.data;
                 
-                // 새로운 액세스 토큰 저장
+                // 토큰 저장
                 localStorage.setItem('accessToken', accessToken);
                 
-                // 원래 요청의 Authorization 헤더 업데이트
-                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                // Authorization 헤더 업데이트
+                config.headers.Authorization = `Bearer ${accessToken}`;
                 
-                // 원래 요청 재시도
-                return api(originalRequest);
+                // 대기 중인 요청들 처리
+                onRefreshed(accessToken);
+                
+                return api(config);
             } catch (refreshError) {
-                // 리프레시 토큰도 만료된 경우 로그아웃 처리
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
+                console.error('Reissue failed:', refreshError);
+                localStorage.clear();
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
             }
         }
-        
+
+        // 403(Forbidden) 발생 시 바로 로그아웃 처리
+        if (response?.status === 403) {
+            localStorage.clear();
+            window.location.href = '/login';
+            return Promise.reject(error);
+        }
+
         return Promise.reject(error);
     }
 );

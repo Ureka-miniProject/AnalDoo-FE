@@ -1,7 +1,7 @@
 <template>
   <header class="header-bar">
     <button class="host-btn" @click="goToCreate">대회 주최하기</button>
-    <img class="logo" :src="logo" alt="Logo" @click="$emit('click-logo')" />
+    <img class="logo" :src="logo" alt="Logo" @click="goToHome" />
     <div class="auth-buttons">
       <button v-if="!isLoggedIn" class="login-btn" @click="goToLogin">로그인</button>
       <div v-else class="profile-menu">
@@ -29,10 +29,18 @@ export default {
     }
   },
   created() {
-    // 로컬 스토리지에서 토큰 확인
-    this.isLoggedIn = !!localStorage.getItem('accessToken')
+    this.syncLoginState()
+  },
+  mounted() {
+    window.addEventListener('storage', this.syncLoginState)
+  },
+  beforeUnmount() {
+    window.removeEventListener('storage', this.syncLoginState)
   },
   methods: {
+    syncLoginState() {
+      this.isLoggedIn = !!localStorage.getItem('accessToken')
+    },
     goToCreate() {
       this.$router.push('/create')
     },
@@ -40,9 +48,11 @@ export default {
       this.$router.push('/login')
     },
     goToProfile() {
-      // TODO: 프로필 페이지로 이동
-      console.log('Profile clicked')
+      this.$router.push('/mypage')
       this.showMenu = false
+    },
+    goToHome() {
+      this.$router.push('/')
     },
     toggleMenu() {
       this.showMenu = !this.showMenu
@@ -50,22 +60,20 @@ export default {
     async handleLogout() {
       try {
         await authAPI.logout()
-        // 로컬 스토리지의 토큰 제거
         localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
         localStorage.removeItem('tokenType')
         localStorage.removeItem('accessTokenExpiresIn')
-        localStorage.removeItem('refreshTokenExpiresIn')
-        
-        // 로그인 상태 업데이트
-        this.isLoggedIn = false
+        this.syncLoginState()
         this.showMenu = false
-        
-        // 홈페이지로 이동
         this.$router.push('/')
       } catch (error) {
         console.error('Logout failed:', error)
       }
+    }
+  },
+  watch: {
+    '$route'() {
+      this.syncLoginState()
     }
   }
 }
