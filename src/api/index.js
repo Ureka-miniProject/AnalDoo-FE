@@ -71,7 +71,7 @@ export const authAPI = {
     // 로그아웃
     logout: () => api.post('/api/v1/users/logout'),
     // 회원가입
-    register: (userData) => api.post('/api/v1/users/join', userData),
+    signup: (userData) => api.post('/api/v1/users/join', userData),
 };
 
 // 대회 관련 API

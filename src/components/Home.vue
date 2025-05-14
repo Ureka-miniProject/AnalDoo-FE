@@ -3,8 +3,7 @@
     <CategoryBar @update:type="onType" />
     <DateSelector @update:day="onDay" />
     <FilterBar @update:region="onRegion" />
-    <MatchList />
-    <FooterBar />
+    <CompetitionList />
   </div>
 </template>
 
@@ -12,7 +11,7 @@
 import CategoryBar from './CategoryBar.vue'
 import DateSelector from './DateSelector.vue'
 import FilterBar from './FilterBar.vue'
-import MatchList from './MatchList.vue'
+import CompetitionList from './CompetitionList.vue'
 
 export default {
   name: 'HomePage',
@@ -20,7 +19,7 @@ export default {
     CategoryBar,
     DateSelector,
     FilterBar,
-    MatchList,
+    CompetitionList
   },
   data() {
   const today = new Date().toISOString().slice(0, 10)

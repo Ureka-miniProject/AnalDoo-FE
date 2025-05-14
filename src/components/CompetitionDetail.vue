@@ -1,11 +1,17 @@
 <template>
-  <div class="match-detail-page">
-    <div class="match-detail-container">
+  <div class="competition-detail-page">
+    <div v-if="isLoading" class="loading-container">
+      <div class="loading-spinner">로딩 중...</div>
+    </div>
+    <div v-else-if="error" class="error-container">
+      <div class="error-message">{{ error }}</div>
+    </div>
+    <div v-else class="competition-detail-container">
       <!-- 왼쪽 정보 섹션 -->
       <div class="info-section">
         <div class="header-section">
-        <h2 class="match-title">{{ match.name }}</h2>
-          <div class="match-status" :class="statusClass" :style="{ background: statusColor }">
+          <h2 class="competition-title">{{ competition.name }}</h2>
+          <div class="competition-status" :class="statusClass" :style="{ background: statusColor }">
             {{ statusLabel }}
           </div>
         </div>
@@ -24,7 +30,7 @@
           <div class="point-item">
             <span class="icon">🗓️</span>
             <span class="label">대회일시</span>
-            <span class="value">{{ formattedMatchDate }}</span>
+            <span class="value">{{ formattedCompetitionDate }}</span>
           </div>
         </div>
 
@@ -34,20 +40,20 @@
               <span class="info-label-icon">🏅</span>
               <span>개최자</span>
             </div>
-            <span class="info-value">{{ match.host }}</span>
+            <span class="info-value">{{ competition.managerId }}</span>
           </div>
           <div class="info-item">
             <div class="info-label">
               <span class="info-label-icon">📍</span>
               <span>대회 장소</span>
             </div>
-            <span class="info-value">{{ match.address.fullAddress }}</span>
+            <span class="info-value">{{ fullAddress }}</span>
           </div>
         </div>
 
         <div class="description-box">
           <h3>📋 대회 설명</h3>
-          <p>{{ match.content }}</p>
+          <p>{{ competition.content }}</p>
         </div>
       </div>
 
@@ -55,28 +61,23 @@
       <div class="main-section">
         <div class="price-section">
           <div class="price-label">참가비</div>
-        <div class="price">{{ match.entryFee.toLocaleString() }}원</div>
-        </div>
-
-        <div class="reward-section">
-          <div class="reward-label">상금</div>
-          <div class="reward">{{ match.reward.toLocaleString() }}원</div>
+          <div class="price">{{ formattedEntryFee }}원</div>
         </div>
         
         <div class="entry-info">
           <div class="progress-bar">
             <div 
               class="progress" 
-              :style="{ width: (match.entryCount / match.limitCount * 100) + '%' }"
+              :style="{ width: (competition.currentEntryCount / competition.entryCount * 100) + '%' }"
             ></div>
           </div>
           <div class="entry-count">
-            <span class="current">{{ match.entryCount }}</span>
+            <span class="current">{{ competition.currentEntryCount }}</span>
             <span class="separator">/</span>
-            <span class="limit">{{ match.limitCount }}명</span>
+            <span class="limit">{{ competition.entryCount }}명</span>
           </div>
           <div class="entry-status">
-            <div class="remaining-count">{{ match.limitCount - match.entryCount }}자리</div>
+            <div class="remaining-count">{{ competition.entryCount - competition.currentEntryCount }}자리</div>
             <div class="remaining-text">남았어요!</div>
           </div>
         </div>
@@ -90,116 +91,136 @@
 </template>
 
 <script>
-import axios from 'axios'
+import api from '@/api'
 import { getSportIcon, getSportLabel, COMPETITION_STATUS, COMPETITION_STATUS_LABELS, COMPETITION_STATUS_COLORS } from '@/constants/sportIcons'
 
 export default {
-  name: 'MatchDetail',
+  name: 'CompetitionDetail',
   data() {
     return {
-      match: {
-        id: 1,
-        name: '풋살 페스티벌',
-        content: '이 대회는 누구나 즐겁게 참여할 수 있는 친선 경기입니다. 경기 규칙은 현장 공지 예정이며, 페어플레이 정신을 중요시합니다.',
-        period: {
-          startDate: '2025-06-01',
-          endDate: '2025-06-10'
-        },
-        matchDate: '2025-06-15 14:30',
-        entryFee: 20000,
-        entryCount: 10,
-        limitCount: 12,
-        reward: 300000,
-        sportType: 'FOOTBALL',
-        host: '김희진',
-        address: {
-          fullAddress: '부산 시민체육관 A구장'
-        },
-        status: COMPETITION_STATUS.OPEN
+      isLoading: true,
+      error: null,
+      competition: {
+        id: null,
+        managerId: null,
+        name: '',
+        content: '',
+        startDate: null,
+        endDate: null,
+        competitionDate: null,
+        entryFee: 0,
+        entryCount: 0,
+        currentEntryCount: 0,
+        status: COMPETITION_STATUS.OPEN,
+        sportType: '',
+        local: '',
+        street: '',
+        zipcode: '',
+        detail: ''
       }
     }
   },
   computed: {
     statusLabel() {
-      return COMPETITION_STATUS_LABELS[this.match.status] || '상태 없음'
+      return COMPETITION_STATUS_LABELS[this.competition.status] || '상태 없음'
     },
     statusColor() {
-      return COMPETITION_STATUS_COLORS[this.match.status] || '#999'
+      return COMPETITION_STATUS_COLORS[this.competition.status] || '#999'
     },
     statusClass() {
       return {
-        'status-open': this.match.status === 'OPEN',
-        'status-closed': this.match.status === 'CLOSED'
+        'status-open': this.competition.status === 'OPEN',
+        'status-closed': this.competition.status === 'CLOSED'
       }
     },
     sportIcon() {
-      return getSportIcon(this.match.sportType)
+      return getSportIcon(this.competition.sportType)
     },
     displaySportType() {
-      return getSportLabel(this.match.sportType)
+      return getSportLabel(this.competition.sportType)
     },
     formattedRecruitPeriod() {
-      const s = new Date(this.match.period.startDate)
-      const e = new Date(this.match.period.endDate)
+      const s = new Date(this.competition.startDate)
+      const e = new Date(this.competition.endDate)
       return `${s.getMonth() + 1}/${s.getDate()} ~ ${e.getMonth() + 1}/${e.getDate()}`
     },
-    formattedMatchDate() {
-      const d = new Date(this.match.matchDate)
+    formattedCompetitionDate() {
+      const d = new Date(this.competition.competitionDate)
       const day = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]
       const h = d.getHours().toString().padStart(2, '0')
       const m = d.getMinutes().toString().padStart(2, '0')
       return `${d.getMonth() + 1}월 ${d.getDate()}일 (${day}) ${h}:${m}`
+    },
+    fullAddress() {
+      return `${this.competition.local} ${this.competition.street} ${this.competition.detail}`
+    },
+    formattedEntryFee() {
+      return this.competition.entryFee ? this.competition.entryFee.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0'
+    }
+  },
+  async created() {
+    try {
+      const competitionId = this.$route.params.id
+      const response = await api.get(`/api/v1/competitions/${competitionId}`)
+      this.competition = response.data
+      console.log('대회 상세 정보:', response.data)
+    } catch (error) {
+      console.error('Failed to fetch competition details:', error)
+      this.error = '대회 정보를 불러오는데 실패했습니다.'
+    } finally {
+      this.isLoading = false
     }
   },
   methods: {
-    requestPay() {
+    async requestPay() {
       const IMP = window.IMP
       IMP.init(process.env.VUE_APP_IAMPORT_KEY)
 
-      // 먼저 예약 요청
-      axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/reservation`, {
-        competitionId: this.match.id
-      })
-        .then(response => {
-          // 예약 성공 시 결제 준비 요청
-          const reservationId = response.data.reservationId
-          return axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/prepare/${reservationId}`)
+      try {
+        // 먼저 예약 요청
+        const reservationResponse = await api.post('/api/v1/reservation', {
+          competitionId: this.competition.id
         })
-        .then(response => {
-          IMP.request_pay({
-            channelKey: response.data.channelKey,
-            pay_method: response.data.payMethod,
-            merchant_uid: response.data.merchantUId,
-            name: response.data.name,
-            amount: response.data.amount,
-            buyer_email: response.data.buyerEmail,
-            buyer_name: response.data.buyerName
-          }, (response) => {
-            // 결제창이 닫힌 경우 
-            if (!response.success) {
-              return
-            }
+        
+        // 예약 성공 시 결제 준비 요청
+        const reservationId = reservationResponse.data.reservationId
+        const paymentPrepareResponse = await api.post(
+          `/api/v1/payments/prepare/${reservationId}`
+        )
 
-            if (response.error_code != null) {
-              return alert(`결제에 실패하였습니다. 에러 내용: ${response.error_msg}`)
-            }
+        // 결제 요청
+        IMP.request_pay({
+          channelKey: paymentPrepareResponse.data.channelKey,
+          pay_method: paymentPrepareResponse.data.payMethod,
+          merchant_uid: paymentPrepareResponse.data.merchantUId,
+          name: paymentPrepareResponse.data.name,
+          amount: paymentPrepareResponse.data.amount,
+          buyer_email: paymentPrepareResponse.data.buyerEmail,
+          buyer_name: paymentPrepareResponse.data.buyerName
+        }, async (response) => {
+          if (!response.success) return
 
-            axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/v1/payments/verify`, {
+          if (response.error_code) {
+            alert(`결제에 실패하였습니다. 에러 내용: ${response.error_msg}`)
+            return
+          }
+
+          try {
+            await api.post('/api/v1/payments/verify', {
               impUid: response.imp_uid,
               merchantUid: response.merchant_uid,
               amount: response.paid_amount
-            }).then(() => {
-              alert('결제가 성공적으로 완료되었습니다.')
-            }).catch(() => {
-              alert('결제 검증에 실패했습니다.')
             })
-          })
-        })
-        .catch(error => {
-          if (error.response) {
-            alert(error.response.data.message)
+            alert('결제가 성공적으로 완료되었습니다.')
+          } catch (error) {
+            alert('결제 검증에 실패했습니다.')
           }
         })
+      } catch (error) {
+        if (error.response) {
+          alert(error.response.data.message)
+        }
+      }
     }
   },
   mounted() {
@@ -212,7 +233,7 @@ export default {
 </script>
 
 <style scoped>
-.match-detail-page {
+.competition-detail-page {
   background: #f7f7f7;
   min-height: 100vh;
   padding: 20px;
@@ -220,7 +241,7 @@ export default {
   box-sizing: border-box;
 }
 
-.match-detail-container {
+.competition-detail-container {
   max-width: 1200px;
   width: 100%;
   margin: 20px auto;
@@ -247,7 +268,7 @@ export default {
   margin-bottom: 24px;
 }
 
-.match-title {
+.competition-title {
   font-size: 32px;
   font-weight: 700;
   color: #1a1a1a;
@@ -256,7 +277,7 @@ export default {
   flex: 1;
 }
 
-.match-status {
+.competition-status {
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 18px;
@@ -345,7 +366,7 @@ export default {
   color: #1a1a1a;
   font-size: 17px;
   font-weight: 500;
-  margin-left: 22px;  /* 아이콘 width와 동일하게 */
+  margin-left: 22px;
 }
 
 .description-box {
@@ -384,38 +405,20 @@ export default {
 
 .price-section {
   text-align: center;
+  margin-bottom: 24px;
 }
 
 .price-label {
   font-size: 16px;
   color: #666;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .price {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.reward-section {
-  text-align: center;
-  margin: 20px 0;
-  padding: 16px;
-  background: #f0f8ff;
-  border-radius: 12px;
-}
-
-.reward-label {
-  font-size: 16px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.reward {
   font-size: 28px;
   font-weight: 700;
-  color: #3578ff;
+  color: #1a1a1a;
+  line-height: 1;
 }
 
 .entry-info {
@@ -511,8 +514,26 @@ export default {
   transform: translateY(0);
 }
 
+.loading-container, .error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
 @media (max-width: 1024px) {
-  .match-detail-container {
+  .competition-detail-container {
     flex-direction: column;
     padding: 24px;
   }
@@ -528,11 +549,11 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .match-detail-page {
+  .competition-detail-page {
     padding: 12px;
-}
+  }
 
-  .match-detail-container {
+  .competition-detail-container {
     padding: 16px;
     margin: 10px auto;
   }
@@ -543,12 +564,12 @@ export default {
     gap: 12px;
   }
 
-  .match-title {
+  .competition-title {
     font-size: 24px;
     width: 100%;
   }
 
-  .match-status {
+  .competition-status {
     font-size: 16px;
     padding: 6px 12px;
     min-width: 80px;
@@ -575,4 +596,4 @@ export default {
     font-size: 14px;
   }
 }
-</style>
+</style> 

@@ -1,9 +1,9 @@
 <template>
-  <div class="create-match-overlay">
-    <div class="create-match-modal">
-      <h2>대회 주최하기</h2>
+  <div class="create-competition-overlay">
+    <div class="create-competition-modal">
+      <h2>대회 개설하기</h2>
       
-      <form @submit.prevent="handleSubmit" class="create-match-form">
+      <form @submit.prevent="handleSubmit" class="create-competition-form">
         <div class="form-group">
           <label>대회명</label>
           <input v-model="formData.name" type="text" required placeholder="대회명을 입력하세요">
@@ -38,11 +38,11 @@
         <div class="form-row">
           <div class="form-group half">
             <label>대회 날짜</label>
-            <input v-model="formData.matchDate" type="date" required>
+            <input v-model="formData.competitionDate" type="date" required>
           </div>
           <div class="form-group half">
             <label>대회 시간</label>
-            <input v-model="formData.matchTime" type="time" required>
+            <input v-model="formData.competitionTime" type="time" required>
           </div>
         </div>
 
@@ -55,16 +55,6 @@
             </div>
           </div>
           <div class="form-group half">
-            <label>상금</label>
-            <div class="input-with-unit">
-              <input v-model.number="formData.reward" type="number" required placeholder="0">
-              <span class="unit">원</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
             <label>최대 참가 인원</label>
             <div class="input-with-unit">
               <input v-model.number="formData.maxCount" type="number" required min="1">
@@ -125,7 +115,7 @@ import { competitionAPI } from '@/api'
 import { LOCALS, LOCAL_LABELS } from '@/constants/sportIcons'
 
 export default {
-  name: 'CreateMatch',
+  name: 'CreateCompetition',
   data() {
     return {
       showAlert: false,
@@ -137,10 +127,9 @@ export default {
         content: '',
         recruitStartDate: '',
         recruitEndDate: '',
-        matchDate: '',
-        matchTime: '',
+        competitionDate: '',
+        competitionTime: '',
         entryFee: 0,
-        reward: 0,
         maxCount: 1,
         local: '',
         street: '',
@@ -155,10 +144,10 @@ export default {
     },
     async handleSubmit() {
       try {
+        const competitionDateTime = new Date(`${this.formData.competitionDate}T${this.formData.competitionTime}`)
         // 날짜와 시간 데이터를 LocalDateTime 형식으로 변환
         const startDate = new Date(this.formData.recruitStartDate)
         const endDate = new Date(this.formData.recruitEndDate)
-        const matchDateTime = new Date(`${this.formData.matchDate}T${this.formData.matchTime}`)
 
         // 백엔드 API 요청 데이터 형식에 맞게 변환
         const requestData = {
@@ -166,7 +155,7 @@ export default {
           content: this.formData.content,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          competitionDate: matchDateTime.toISOString(),
+          competitionDate: competitionDateTime.toISOString(),
           entryFee: this.formData.entryFee,
           entryCount: this.formData.maxCount,
           sportType: this.formData.sportType,
@@ -201,7 +190,7 @@ export default {
 </script>
 
 <style scoped>
-.create-match-overlay {
+.create-competition-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -215,7 +204,7 @@ export default {
   z-index: 1000;
 }
 
-.create-match-modal {
+.create-competition-modal {
   background: white;
   width: 90%;
   max-width: 600px;
@@ -261,7 +250,7 @@ h2::after {
   border-radius: 2px;
 }
 
-.create-match-form {
+.create-competition-form {
   width: 100%;
   margin: 0 auto;
 }
@@ -427,27 +416,27 @@ select {
 }
 
 /* 스크롤바 스타일링 */
-.create-match-modal::-webkit-scrollbar {
+.create-competition-modal::-webkit-scrollbar {
   width: 10px;
 }
 
-.create-match-modal::-webkit-scrollbar-track {
+.create-competition-modal::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 5px;
 }
 
-.create-match-modal::-webkit-scrollbar-thumb {
+.create-competition-modal::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 5px;
   border: 2px solid #f1f1f1;
 }
 
-.create-match-modal::-webkit-scrollbar-thumb:hover {
+.create-competition-modal::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
 }
 
 @media (max-width: 768px) {
-  .create-match-modal {
+  .create-competition-modal {
     width: 95%;
     padding: 24px 28px;
     margin: 0;

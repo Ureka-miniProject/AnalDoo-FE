@@ -1,16 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomePage from './components/Home.vue'
-import MatchDetail from './components/MatchDetail.vue'
-import CreateMatch from './components/CreateMatch.vue'
-import LoginPage from './components/Login.vue'
-import SignupPage from './components/Signup.vue'
+import CompetitionDetail from './components/CompetitionDetail.vue'
+import CreateCompetition from './components/CreateCompetition.vue'
+import Home from './components/Home.vue'
+import Login from './components/Login.vue'
+import Signup from './components/Signup.vue'
 
 const routes = [
-  { path: '/', component: HomePage },
-  { path: '/match/:id', component: MatchDetail, props: true },
-  { path: '/create', component: CreateMatch },
-  { path: '/login', component: LoginPage },
-  { path: '/signup', component: SignupPage }
+  { path: '/', component: Home },
+  { path: '/competition/:id', component: CompetitionDetail, props: true },
+  { path: '/create', component: CreateCompetition },
+  { path: '/login', component: Login },
+  { path: '/signup', component: Signup }
 ]
 
 const router = createRouter({
