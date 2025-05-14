@@ -84,8 +84,9 @@ api.interceptors.response.use(
                 return api(config);
             } catch (refreshError) {
                 console.error('Reissue failed:', refreshError);
+                // 토큰 재발급 실패 시 로컬 스토리지 클리어하고 메인 페이지로 리다이렉트
                 localStorage.clear();
-                window.location.href = '/login';
+                window.location.href = '/';
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
@@ -95,7 +96,7 @@ api.interceptors.response.use(
         // 접근 권한 없음 (403): 즉시 로그아웃
         if (response?.status === 403) {
             localStorage.clear();
-            window.location.href = '/login';
+            window.location.href = '/';
             return Promise.reject(error);
         }
 
