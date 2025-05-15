@@ -40,7 +40,7 @@
               <span class="info-label-icon">🏅</span>
               <span>개최자</span>
             </div>
-            <span class="info-value">{{ competition.managerId }}</span>
+            <span class="info-value">{{ competition.managerName }}</span>
           </div>
           <div class="info-item">
             <div class="info-label">
@@ -102,7 +102,7 @@ export default {
       error: null,
       competition: {
         id: null,
-        managerId: null,
+        managerName: '',
         name: '',
         content: '',
         startDate: null,
