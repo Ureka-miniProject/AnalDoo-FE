@@ -47,17 +47,10 @@
         </div>
 
         <div class="form-row">
-          <div class="form-group half">
+          <div class="form-group">
             <label>참가비</label>
             <div class="input-with-unit">
               <input v-model.number="formData.entryFee" type="number" required placeholder="0">
-              <span class="unit">원</span>
-            </div>
-          </div>
-          <div class="form-group half">
-            <label>상금</label>
-            <div class="input-with-unit">
-              <input v-model.number="formData.reward" type="number" required placeholder="0">
               <span class="unit">원</span>
             </div>
           </div>
@@ -140,7 +133,6 @@ export default {
         matchDate: '',
         matchTime: '',
         entryFee: 0,
-        reward: 0,
         maxCount: 1,
         local: '',
         street: '',

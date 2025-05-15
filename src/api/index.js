@@ -113,8 +113,10 @@ export const authAPI = {
 
 // 대회 관련 API
 export const competitionAPI = {
-    createCompetition: (data) => api.post('/api/v1/competitions', data),
     getCompetitions: (params) => api.get('/api/v1/competitions/list', { params }),
+    createCompetition: (data) => api.post('/api/v1/competitions', data),
+    getCompetition: (id) => api.get(`/api/v1/competitions/${id}`),
+    deleteCompetition: (id) => api.delete(`/api/v1/competitions/${id}`)
 };
 
 // 예약 관련 API

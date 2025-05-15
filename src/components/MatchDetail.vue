@@ -34,7 +34,7 @@
               <span class="info-label-icon">🏅</span>
               <span>개최자</span>
             </div>
-            <span class="info-value">{{ match.host }}</span>
+            <span class="info-value">{{ match.managerName }}</span>
           </div>
           <div class="info-item">
             <div class="info-label">
@@ -55,28 +55,23 @@
       <div class="main-section">
         <div class="price-section">
           <div class="price-label">참가비</div>
-        <div class="price">{{ match.entryFee.toLocaleString() }}원</div>
-        </div>
-
-        <div class="reward-section">
-          <div class="reward-label">상금</div>
-          <div class="reward">{{ match.reward.toLocaleString() }}원</div>
+          <div class="price">{{ match.entryFee.toLocaleString() }}원</div>
         </div>
         
         <div class="entry-info">
           <div class="progress-bar">
             <div 
               class="progress" 
-              :style="{ width: (match.entryCount / match.limitCount * 100) + '%' }"
+              :style="{ width: (match.currentEntryCount / match.entryCount * 100) + '%' }"
             ></div>
           </div>
           <div class="entry-count">
-            <span class="current">{{ match.entryCount }}</span>
+            <span class="current">{{ match.currentEntryCount }}</span>
             <span class="separator">/</span>
-            <span class="limit">{{ match.limitCount }}명</span>
+            <span class="limit">{{ match.entryCount }}명</span>
           </div>
           <div class="entry-status">
-            <div class="remaining-count">{{ match.limitCount - match.entryCount }}자리</div>
+            <div class="remaining-count">{{ match.entryCount - match.currentEntryCount }}자리</div>
             <div class="remaining-text">남았어요!</div>
           </div>
         </div>
@@ -91,60 +86,42 @@
 
 <script>
 import api from '@/api'
-import { getSportIcon, getSportLabel, COMPETITION_STATUS, COMPETITION_STATUS_LABELS, COMPETITION_STATUS_COLORS } from '@/constants/sportIcons'
+import { getSportIcon, getSportLabel, COMPETITION_STATUS_LABELS, COMPETITION_STATUS_COLORS } from '@/constants/sportIcons'
 
 export default {
   name: 'MatchDetail',
   data() {
     return {
-      match: {
-        id: 1,
-        name: '풋살 페스티벌',
-        content: '이 대회는 누구나 즐겁게 참여할 수 있는 친선 경기입니다. 경기 규칙은 현장 공지 예정이며, 페어플레이 정신을 중요시합니다.',
-        period: {
-          startDate: '2025-06-01',
-          endDate: '2025-06-10'
-        },
-        matchDate: '2025-06-15 14:30',
-        entryFee: 20000,
-        entryCount: 10,
-        limitCount: 12,
-        reward: 300000,
-        sportType: 'FOOTBALL',
-        host: '김희진',
-        address: {
-          fullAddress: '부산 시민체육관 A구장'
-        },
-        status: COMPETITION_STATUS.OPEN
-      }
+      match: null,
+      loading: true
     }
   },
   computed: {
     statusLabel() {
-      return COMPETITION_STATUS_LABELS[this.match.status] || '상태 없음'
+      return COMPETITION_STATUS_LABELS[this.match?.status] || '상태 없음'
     },
     statusColor() {
-      return COMPETITION_STATUS_COLORS[this.match.status] || '#999'
+      return COMPETITION_STATUS_COLORS[this.match?.status] || '#999'
     },
     statusClass() {
       return {
-        'status-open': this.match.status === 'OPEN',
-        'status-closed': this.match.status === 'CLOSED'
+        'status-open': this.match?.status === 'OPEN',
+        'status-closed': this.match?.status === 'CLOSED'
       }
     },
     sportIcon() {
-      return getSportIcon(this.match.sportType)
+      return getSportIcon(this.match?.sportType)
     },
     displaySportType() {
-      return getSportLabel(this.match.sportType)
+      return getSportLabel(this.match?.sportType)
     },
     formattedRecruitPeriod() {
-      const s = new Date(this.match.period.startDate)
-      const e = new Date(this.match.period.endDate)
+      const s = new Date(this.match?.period.startDate)
+      const e = new Date(this.match?.period.endDate)
       return `${s.getMonth() + 1}/${s.getDate()} ~ ${e.getMonth() + 1}/${e.getDate()}`
     },
     formattedMatchDate() {
-      const d = new Date(this.match.matchDate)
+      const d = new Date(this.match?.matchDate)
       const day = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]
       const h = d.getHours().toString().padStart(2, '0')
       const m = d.getMinutes().toString().padStart(2, '0')
@@ -152,6 +129,20 @@ export default {
     }
   },
   methods: {
+    async fetchMatchData() {
+      try {
+        const id = this.$route.params.id;
+        const response = await api.get(`/api/v1/competitions/${id}`);
+        this.match = response.data;
+        this.loading = false;
+      } catch (error) {
+        console.error('대회 정보를 불러오는데 실패했습니다:', error);
+        if (error.response) {
+          console.error('에러 응답:', error.response.data);
+        }
+        this.loading = false;
+      }
+    },
     requestPay() {
       const IMP = window.IMP
       IMP.init(process.env.VUE_APP_IAMPORT_KEY)
@@ -207,6 +198,9 @@ export default {
     const script = document.createElement('script')
     script.src = 'https://cdn.iamport.kr/v1/iamport.js'
     document.head.appendChild(script)
+
+    // 대회 정보 로드
+    this.fetchMatchData()
   }
 }
 </script>
@@ -396,26 +390,6 @@ export default {
   font-size: 32px;
   font-weight: 700;
   color: #1a1a1a;
-}
-
-.reward-section {
-  text-align: center;
-  margin: 20px 0;
-  padding: 16px;
-  background: #f0f8ff;
-  border-radius: 12px;
-}
-
-.reward-label {
-  font-size: 16px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.reward {
-  font-size: 28px;
-  font-weight: 700;
-  color: #3578ff;
 }
 
 .entry-info {
