@@ -114,7 +114,12 @@ export const authAPI = {
 // 대회 관련 API
 export const competitionAPI = {
     createCompetition: (data) => api.post('/api/v1/competitions', data),
+    getCompetitions: (params) => api.get('/api/v1/competitions/list', { params }),
 };
 
+// 예약 관련 API
+export const reservationAPI = {
+    createReservation: (data) => api.post('/api/v1/reservation', data),
+};
 
 export default api;
