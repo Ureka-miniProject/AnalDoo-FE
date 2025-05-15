@@ -28,11 +28,16 @@
           v-for="item in competitions"
           :key="item.id"
           class="competition-card"
-          @click="goToDetail(item.id)"
-          style="cursor:pointer;"
         >
-          <div class="comp-title">{{ item.name }}</div>
-          <div class="comp-info">
+          <div class="comp-header">
+            <div class="comp-title" @click="goToDetail(item.id)">{{ item.name }}</div>
+            <button class="delete-btn" @click.stop="handleDelete(item.id)" title="삭제">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="comp-info" @click="goToDetail(item.id)">
             <span v-if="item.competitionDate">일시: {{ formatDate(item.competitionDate) }}</span>
             <span v-if="item.local">장소: {{ item.local }}</span>
             <span v-if="item.status">상태: {{ item.status }}</span>
@@ -182,6 +187,30 @@ const goToDetail = (id) => {
   router.push(`/match/${id}`)
 }
 
+const handleDelete = async (id) => {
+  if (!confirm('정말로 삭제하시겠습니까?')) return;
+  
+  try {
+    const url = activeTab.value === 'created' 
+      ? `/api/v1/competitions/${id}`
+      : `/api/v1/reservation/${id}`;
+    
+    await api.delete(url);
+    
+    // 삭제 후 목록 새로고침
+    if (activeTab.value === 'created') {
+      await fetchCreated();
+    } else {
+      await fetchJoined();
+    }
+    
+    alert('삭제되었습니다.');
+  } catch (error) {
+    console.error('삭제 실패:', error);
+    alert(error.response?.data?.message || '삭제에 실패했습니다.');
+  }
+};
+
 onMounted(() => {
   fetchMyInfo();
   fetchCreated();
@@ -269,10 +298,33 @@ onMounted(() => {
   margin-bottom: 1rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
+.comp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.delete-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.delete-btn:hover {
+  background: #fee;
+  color: #e74c3c;
+}
 .comp-title {
+  cursor: pointer;
+  flex: 1;
   font-size: 1.1rem;
   font-weight: bold;
-  margin-bottom: 0.5rem;
+}
+.comp-title:hover {
+  color: #4a90e2;
 }
 .comp-info span {
   display: inline-block;
