@@ -1,6 +1,9 @@
 <template>
   <div class="match-detail-page">
-    <div class="match-detail-container">
+    <div v-if="loading" class="loading-state">
+      로딩중입니다...
+    </div>
+    <div v-else-if="match" class="match-detail-container">
       <!-- 왼쪽 정보 섹션 -->
       <div class="info-section">
         <div class="header-section">
@@ -133,7 +136,26 @@ export default {
       try {
         const id = this.$route.params.id;
         const response = await api.get(`/api/v1/competitions/${id}`);
-        this.match = response.data;
+
+        this.match = {
+          id: response.data.id,
+          managerName: response.data.managerName,
+          name: response.data.name,
+          content: response.data.content,
+          period: {
+            startDate: response.data.startDate,
+            endDate: response.data.endDate
+          },
+          matchDate: response.data.competitionDate,
+          entryFee: response.data.entryFee,
+          entryCount: response.data.entryCount,
+          currentEntryCount: response.data.currentEntryCount,
+          status: response.data.status,
+          sportType: response.data.sportType,
+          address: {
+            fullAddress: `${response.data.local} ${response.data.street} ${response.data.detail}`
+          }
+        };
         this.loading = false;
       } catch (error) {
         console.error('대회 정보를 불러오는데 실패했습니다:', error);
@@ -198,8 +220,8 @@ export default {
     const script = document.createElement('script')
     script.src = 'https://cdn.iamport.kr/v1/iamport.js'
     document.head.appendChild(script)
-
-    // 대회 정보 로드
+    
+    // 대회 데이터 가져오기
     this.fetchMatchData()
   }
 }
@@ -548,5 +570,14 @@ export default {
   .remaining-text {
     font-size: 14px;
   }
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 18px;
+  color: #666;
 }
 </style>
