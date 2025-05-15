@@ -156,7 +156,6 @@ export default {
       const IMP = window.IMP
       IMP.init(process.env.VUE_APP_IAMPORT_KEY)
 
-      // 먼저 예약 요청
       api.post('/api/v1/reservation', {
         competitionId: this.match.id
       })
