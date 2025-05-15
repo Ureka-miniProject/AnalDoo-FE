@@ -41,7 +41,7 @@
         </div>
       </div>
     </div>
-    <!-- 프로필 편집 모달 -->
+    <!-- 프로필 편집 모달 테스트 -->
     <div v-if="showEditModal" class="modal" @click.self="closeEditModal">
       <div class="modal-content">
         <h3>프로필 편집</h3>
