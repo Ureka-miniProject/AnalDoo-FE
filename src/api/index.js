@@ -116,4 +116,5 @@ export const competitionAPI = {
     createCompetition: (data) => api.post('/api/v1/competitions', data),
 };
 
+
 export default api;

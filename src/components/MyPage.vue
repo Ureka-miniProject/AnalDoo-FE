@@ -1,5 +1,4 @@
 <template>
-  <HeaderBar />
   <div class="mypage-container">
     <div class="profile-header">
       <div class="profile-info">
@@ -66,7 +65,6 @@
 </template>
 
 <script setup>
-import HeaderBar from './HeaderBar.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
