@@ -1,104 +1,90 @@
 <template>
   <div class="filter-bar">
-    <div style="position:relative;">
-      <button ref="regionBtn" class="filter-btn" @click="toggleDropdown">{{ getLocalLabel(selectedRegion) }} ▼</button>
-      <div v-if="showDropdown" class="dropdown" :style="dropdownStyle">
-        <div 
-          v-for="region in regions" 
-          :key="region" 
-          class="dropdown-item" 
-          @click="selectRegion(region)"
-        >
-          {{ getLocalLabel(region) }}
-        </div>
-      </div>
+    <div class="filter-options">
+      <button 
+        v-for="region in regions" 
+        :key="region.value"
+        :class="['filter-btn', { active: selectedRegion === region.value }]"
+        @click="selectRegion(region.value)"
+      >
+        {{ region.label }}
+      </button>
     </div>
   </div>
 </template>
 
 <script>
-import { LOCALS, getLocalLabel } from '@/constants/sportIcons'
+import { ref } from 'vue'
 
 export default {
-  emits: ['update:region'],
-  data() {
-    return {
-      regions: Object.keys(LOCALS),
-      selectedRegion: 'SEOUL',
-      showDropdown: false,
-      dropdownStyle: {}
+  name: 'FilterBar',
+  setup(props, { emit }) {
+    const selectedRegion = ref(null)
+    
+    const regions = [
+      { label: '전체', value: null },
+      { label: '서울', value: 'SEOUL' },
+      { label: '대구', value: 'DAEGU' },
+      { label: '광주', value: 'GWANGJU' }
+    ]
+
+    const selectRegion = (region) => {
+      selectedRegion.value = region
+      emit('update:region', region)
     }
-  },
-  methods: {
-    toggleDropdown() {
-      this.showDropdown = !this.showDropdown
-      if (this.showDropdown) {
-        this.$nextTick(() => {
-          const btn = this.$refs.regionBtn
-          if (btn) {
-            const rect = btn.getBoundingClientRect()
-            this.dropdownStyle = {
-              position: 'fixed',
-              left: rect.left + 'px',
-              top: rect.bottom + 'px',
-              minWidth: rect.width + 'px',
-              zIndex: 2000
-            }
-          }
-        })
-      }
-    },
-    selectRegion(region) {
-      this.selectedRegion = region
-      this.showDropdown = false
-      this.$emit('update:region', region)
-    },
-    getLocalLabel
+
+    return {
+      selectedRegion,
+      regions,
+      selectRegion
+    }
   }
 }
 </script>
 
 <style scoped>
 .filter-bar {
+  background: white;
+  padding: 12px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.filter-options {
   display: flex;
   gap: 8px;
-  padding: 12px 8px 8px 8px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  overflow-x: auto;
 }
+
 .filter-btn {
-  background: #f5f5f5;
-  border: none;
-  border-radius: 16px;
-  padding: 6px 14px;
+  padding: 8px 16px;
+  border: 1px solid #ffd6c4;
+  border-radius: 20px;
+  background: white;
+  color: #ff6200;
   font-size: 14px;
-  color: rgb(239, 141, 99);
   cursor: pointer;
-  white-space: nowrap;
+  transition: all 0.2s;
 }
-.filter-btn:active, .filter-btn:focus {
-  background: #e0eaff;
+
+.filter-btn:hover {
+  border-color: #ff6200;
+  color: #ff6200;
+  background: #fff5f0;
 }
-.dropdown {
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px #0002;
-  min-width: 120px;
-  min-height: 40px;
-  padding: 8px 0;
-  display: flex;
-  flex-direction: column;
+
+.filter-btn.active {
+  background: #ff6200;
+  border-color: #ff6200;
+  color: white;
 }
-.dropdown-item {
-  padding: 10px 18px;
-  cursor: pointer;
-  font-size: 15px;
-  color: #000000;
-  white-space: nowrap;
-}
-.dropdown-item:hover {
-  background: #f0f6ff;
+
+@media (max-width: 768px) {
+  .filter-bar {
+    padding: 8px 16px;
+  }
+  
+  .filter-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
 }
 </style> 
