@@ -1,21 +1,50 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import HomePage from './components/Home.vue'
 import CompetitionDetail from './components/CompetitionDetail.vue'
 import CreateCompetition from './components/CreateCompetition.vue'
-import Home from './components/Home.vue'
-import Login from './components/Login.vue'
-import Signup from './components/Signup.vue'
+import LoginPage from './components/Login.vue'
+import SignupPage from './components/Signup.vue'
+import MyPage from './components/MyPage.vue'
+import api from './api'
 
 const routes = [
-  { path: '/', component: Home },
+  { path: '/', component: HomePage },
   { path: '/competition/:id', component: CompetitionDetail, props: true },
   { path: '/create', component: CreateCompetition },
-  { path: '/login', component: Login },
-  { path: '/signup', component: Signup }
+  { path: '/login', component: LoginPage },
+  { path: '/signup', component: SignupPage },
+  { path: '/mypage', component: MyPage }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+// 인증이 필요한 경로에 대한 라우터 가드 추가
+router.beforeEach(async (to, from, next) => {
+  const token = localStorage.getItem('accessToken');
+  const authRequiredPaths = ['/mypage', '/create'];
+
+  if (authRequiredPaths.includes(to.path)) {
+    if (!token) {
+      // accessToken이 없으면 refreshToken으로 재발급 시도
+      try {
+        const response = await api.post('/api/v1/users/reissue');
+        const accessToken = response.data?.accessToken;
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken);
+          next(); // 재발급 성공 시 원래 경로로 진행
+        } else {
+          next('/login');
+        }
+      } catch (e) {
+        next('/login');
+      }
+      return;
+    }
+  }
+  next();
+});
 
 export default router 

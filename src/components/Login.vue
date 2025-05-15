@@ -43,7 +43,6 @@
 
 <script>
 import { authAPI } from '../api'
-import api from '../api'
 
 export default {
   name: 'LoginPage',
@@ -59,26 +58,16 @@ export default {
     async handleLogin() {
       this.error = ''
       this.isLoading = true
-      
       try {
         const response = await authAPI.login({
           email: this.email,
           password: this.password
         })
-        
-        // 로그인 성공 시 토큰 저장
-        const { accessToken, refreshToken, tokenType, accessTokenValidationTime, refreshTokenValidationTime } = response.data
-        
-        // 토큰 저장
+        // 로그인 성공 시 accessToken만 저장 (refreshToken은 쿠키로 관리)
+        const { accessToken, tokenType, accessTokenValidationTime } = response.data
         localStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('refreshToken', refreshToken)
         localStorage.setItem('tokenType', tokenType)
         localStorage.setItem('accessTokenExpiresIn', accessTokenValidationTime)
-        localStorage.setItem('refreshTokenExpiresIn', refreshTokenValidationTime)
-        
-        // Authorization 헤더 설정
-        api.defaults.headers.common['Authorization'] = `${tokenType} ${accessToken}`
-        
         // 홈페이지로 이동
         this.$router.push('/')
       } catch (error) {
